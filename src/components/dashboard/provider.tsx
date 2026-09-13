@@ -1,0 +1,21 @@
+import { Card, Icon, StatusBadge } from "@/components/ui/primitives";
+import type { Dashboard } from "./use-dashboard";
+
+export function ProviderPanel({ d }: { d: Dashboard }) {
+  const readAllowed = d.usable && d.cap?.actions.includes("github.repo.read");
+  const issueAllowed = d.usable && d.cap?.actions.includes("github.issue.create");
+  return <Card id="provider" title="Provider Demo" subtitle="GitHub is the first adapter demonstrating GhostKey’s capability model." icon={<Icon name="github" />} className="provider-panel" aside={<StatusBadge tone={d.providerVerified ? "success" : "muted"}>{d.providerVerified ? "VERIFIED" : "GITHUB"}</StatusBadge>}>
+    <details className="credential-setup"><summary><span className="flex items-center gap-2"><Icon name="key" size={15} />Protected credential setup</span><span className="micro">{d.credentialStored ? "STORED THIS SESSION" : "LOCAL OPERATOR"}</span></summary><div className="pt-4"><p className="caption">Use a limited test PAT for a disposable repository. Secrets are consumed internally, never handed to the agent. The server clears the credential on restart.</p><form onSubmit={d.storeCredential} className="mt-4"><label>Test GitHub PAT<input name="token" type="password" autoComplete="off" required maxLength={4096} placeholder="Paste a limited test token" /></label><button className="button secondary mt-3" disabled={Boolean(d.busy)}>{d.busy === "credential" ? "Protecting…" : "Store with Key Ring"}</button></form></div></details>
+    <div className="demo-scope"><span className="micro">SELECTED SCOPE</span><code>{d.cap ? `${d.cap.resource.owner}/${d.cap.resource.repo}` : "Select a capability above"}</code></div>
+    <div className="provider-actions"><div><h3>Read repository</h3><p>Inspect repository metadata within the selected scope.</p></div><button className="button secondary" disabled={Boolean(d.busy) || !readAllowed} onClick={() => void d.provider("read")}>{d.busy === "read" ? "Reading…" : "Read repository"}<Icon name="arrow" size={15} /></button></div>
+    {d.repoResult && <div className="feedback" role="status"><div className="flex justify-between gap-2"><strong>{d.repoResult.name}</strong><span className="micro">{d.repoResult.private ? "PRIVATE" : "PUBLIC"} · {d.repoResult.defaultBranch}</span></div><p>{d.repoResult.description ?? "No repository description."}</p></div>}
+    <form className="issue-form" onSubmit={e => { e.preventDefault(); const data = new FormData(e.currentTarget); void d.provider("issue", { title: String(data.get("title")), body: String(data.get("body")) }); }}>
+      <h3>Create an issue</h3><div className="mt-4"><label>Issue title<input name="title" required maxLength={256} defaultValue="GhostKey capability test" /></label><label className="mt-3">Description<textarea name="body" rows={3} maxLength={10000} defaultValue="Created through a scoped GhostKey capability." /></label></div>
+      <div className="flex flex-wrap items-center justify-between gap-3 mt-4"><p className="micro">Creates a real issue in the selected repository.</p><button className="button primary" disabled={Boolean(d.busy) || !issueAllowed}>{d.busy === "issue" ? "Creating…" : "Create issue"}<Icon name="arrow" size={15} /></button></div>
+    </form>
+    {d.issueResult && <div className="feedback feedback-success" role="status"><strong>Issue #{d.issueResult.number} created</strong><p>{d.issueResult.title}</p><a className="text-link" href={`https://github.com/${encodeURIComponent(d.issueResult.owner)}/${encodeURIComponent(d.issueResult.repo)}/issues/${d.issueResult.number}`} target="_blank" rel="noreferrer">View in GitHub ↗</a></div>}
+    <div className="forbidden-demo"><div className="flex flex-wrap items-center justify-between gap-3"><div><h3>Test the boundary</h3><p className="caption"><code>github.repo.delete</code> is never granted.</p></div><button className="button danger" disabled={Boolean(d.busy) || !d.usable} onClick={() => void d.provider("blocked")}>{d.busy === "blocked" ? "Checking…" : "Test Forbidden Action"}</button></div>
+      {d.blocked && <div className="blocked-result" role="status"><StatusBadge tone="danger">BLOCKED</StatusBadge><code>ACTION_NOT_ALLOWED</code><p>Blocked before provider request.</p></div>}
+    </div>
+  </Card>;
+}
