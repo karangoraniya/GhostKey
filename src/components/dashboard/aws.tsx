@@ -4,9 +4,9 @@ import type { AwsDashboard } from "./use-aws";
 
 export function AwsPanel({ a, d }: { a: AwsDashboard; d: Dashboard }) {
   const disabled = !!a.busy || !!d.busy;
-  return <Card title="AWS S3 Demo" subtitle="Provider #2 · the same agent, a different boundary." aside={<StatusBadge tone={a.status?.verifiedAt ? "success" : "muted"}>{a.status?.verifiedAt ? "CONNECTED" : a.status?.configured ? "CONFIGURED" : "NOT CONFIGURED"}</StatusBadge>}>
-    <p className="caption">Read-only cloud access. Region: <code>{a.status?.region ?? "Not configured"}</code></p>
-    {!a.status?.configured && <p className="caption mt-3">Operator setup: expand Advanced Controls → AWS Configuration. Use a dedicated read-only credential and one demo bucket.</p>}
+  return <Card title="AWS S3 Demo" subtitle="Provider #2 · the same agent, a different boundary." aside={<div className="flex items-center gap-2"><span className="section-number">OPTIONAL</span><StatusBadge tone={a.status?.verifiedAt ? "success" : "muted"}>{a.status?.verifiedAt ? "CONNECTED" : a.status?.configured ? "CONFIGURED" : "NOT CONFIGURED"}</StatusBadge></div>}>
+    <p className="caption">Not required for the main demo — shows the same agent working against a second, independent provider boundary. Region: <code>{a.status?.region ?? "Not configured"}</code></p>
+    {!a.status?.configured && <p className="caption mt-3">Operator setup: <a className="text-link" href="#advanced">expand Advanced Controls → AWS Configuration</a>. Use a dedicated read-only credential and one demo bucket.</p>}
     <div className="mt-4">{a.agent ? <Identifier value={a.agent.id} label="shared agent ID" /> : <p className="caption">Create Agent in stage 01 first.</p>}</div>
     <label className="mt-4">Demo bucket<input value={a.bucket} onChange={e => a.setBucket(e.target.value)} disabled={disabled} placeholder="Your existing S3 bucket name" maxLength={63} /></label>
     <button className="button secondary mt-3" disabled={disabled || !a.agent || !d.alive(a.agent.expiresAt) || !a.bucket.trim()} onClick={() => void a.create()}>{a.busy === "grant" ? "Granting…" : "Create scoped AWS capability"}</button>

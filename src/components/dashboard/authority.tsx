@@ -1,5 +1,5 @@
 import { githubActions } from "@/types/broker";
-import { Card, EmptyState, Icon, Identifier, StatusBadge, countdown, localTime } from "@/components/ui/primitives";
+import { Card, EmptyState, Icon, Identifier, StatusBadge, countdown, durationLabel, localTime } from "@/components/ui/primitives";
 import type { Dashboard } from "./use-dashboard";
 
 export function AgentPanel({ d }: { d: Dashboard }) {
@@ -9,7 +9,7 @@ export function AgentPanel({ d }: { d: Dashboard }) {
     {d.ghost && <p className="micro mt-3">Created {localTime(d.ghost.createdAt)} · observed this session</p>}
     <form className="inline-form mt-5" onSubmit={e => { e.preventDefault(); void d.createGhost(); }}>
       <label className="flex-1">Agent name<input value={d.name} onChange={e => d.setName(e.target.value)} placeholder="e.g. claude-code" maxLength={100} required /></label>
-      <label>TTL (seconds)<input type="number" min={1} max={86400} step={1} required value={Number.isNaN(d.ghostTtl) ? "" : d.ghostTtl} onChange={e => d.setGhostTtl(e.target.valueAsNumber)} /></label>
+      <label>TTL (seconds){d.ghostTtl ? <span className="micro"> · ≈ {durationLabel(d.ghostTtl)}</span> : null}<input type="number" min={1} max={86400} step={1} required value={Number.isNaN(d.ghostTtl) ? "" : d.ghostTtl} onChange={e => d.setGhostTtl(e.target.valueAsNumber)} /></label>
       <button className="button secondary" disabled={Boolean(d.busy) || !d.name.trim()}>{d.busy === "ghost" ? "Creating…" : d.ghost ? "New identity" : "Create identity"}</button>
     </form>
   </Card>;
@@ -23,7 +23,7 @@ export function AuthorityPanel({ d }: { d: Dashboard }) {
       </div>
       <p className="micro mt-2">Owner and repository names only. No GitHub URLs.</p>
       <fieldset className="action-picker"><legend>Scope this grant</legend>{githubActions.map(action => <label className="check" key={action}><input type="checkbox" checked={d.actions.includes(action)} onChange={e => d.setActions(e.target.checked ? [...d.actions, action] : d.actions.filter(item => item !== action))} /><code>{action.replace("github.", "")}</code></label>)}</fieldset>
-      <div className="flex flex-wrap items-end justify-between gap-3"><label>Capability TTL (seconds)<input type="number" min={1} max={86400} step={1} required value={Number.isNaN(d.capTtl) ? "" : d.capTtl} onChange={e => d.setCapTtl(e.target.valueAsNumber)} /></label><button className="button primary" disabled={Boolean(d.busy) || !d.ghostActive || !d.owner.trim() || !d.repo.trim() || !d.actions.length}>{d.busy === "capability" ? "Granting…" : "Grant capability"}</button></div>
+      <div className="flex flex-wrap items-end justify-between gap-3"><label>Capability TTL (seconds){d.capTtl ? <span className="micro"> · ≈ {durationLabel(d.capTtl)}</span> : null}<input type="number" min={1} max={86400} step={1} required value={Number.isNaN(d.capTtl) ? "" : d.capTtl} onChange={e => d.setCapTtl(e.target.valueAsNumber)} /></label><button className="button primary" disabled={Boolean(d.busy) || !d.ghostActive || !d.owner.trim() || !d.repo.trim() || !d.actions.length}>{d.busy === "capability" ? "Granting…" : "Grant capability"}</button></div>
     </form>
     <div className="capability-list">
       {!d.currentCaps.length && <EmptyState title="No capabilities granted">A provider, a resource, an action, and a time limit.</EmptyState>}

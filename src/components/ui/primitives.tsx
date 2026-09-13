@@ -36,6 +36,12 @@ export function Identifier({ value, label = "identifier" }: { value: string; lab
 export function EmptyState({ title, children }: { title: string; children: ReactNode }) {
   return <div className="empty-state"><span className="empty-cross" aria-hidden="true">+</span><div><h3>{title}</h3><p>{children}</p></div></div>;
 }
+export function durationLabel(seconds: number) {
+  if (!Number.isFinite(seconds) || seconds <= 0) return "";
+  if (seconds % 3600 === 0) return `${seconds / 3600}h`;
+  if (seconds % 60 === 0) return `${seconds / 60}m`;
+  return `${seconds}s`;
+}
 export function countdown(expiresAt: string, now: number) {
   if (!now) return "—";
   const seconds = Math.max(0, Math.ceil((Date.parse(expiresAt) - now) / 1000));
