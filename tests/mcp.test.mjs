@@ -18,7 +18,7 @@ test("stdio MCP startup, tool discovery and safe errors", async () => {
     await client.connect(transport);
     transport.stderr?.on("data", chunk => { logs += chunk; });
     const listed = await client.listTools();
-    assert.equal(listed.tools.length, 4);
+    assert.equal(listed.tools.length, 7);
     for (const name of ["get_secret", "get_token", "export_credential", "decrypt_secret"]) {
       const result = await client.callTool({ name, arguments: {} });
       assert.equal(result.isError, true);

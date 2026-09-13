@@ -1,4 +1,6 @@
 import "server-only";
+import { getAgentBalance, sendAgentTransfer } from "@/lib/providers/web3/client";
+import { executeCustomOperation } from "@/lib/providers/custom/client";
 import { listGhostCapabilities, validateCapability } from "@/lib/capabilities";
 import { getRepository, createIssue } from "@/lib/providers/github/client";
 import { BrokerError } from "./errors";
@@ -9,6 +11,9 @@ export async function executeMcpTool(tool: string, input: unknown) {
   if (!Object.hasOwn(toolSchemas, tool)) throw new BrokerError("UNKNOWN_TOOL", 400);
   const parsed = toolSchemas[tool as ToolName].safeParse(input);
   if (!parsed.success) throw new BrokerError("INVALID_INPUT", 400);
+  if (tool === "ghost_web3_balance") return getAgentBalance(parsed.data);
+  if (tool === "ghost_web3_transfer") return sendAgentTransfer(parsed.data);
+  if (tool === "ghost_custom_read") return executeCustomOperation(parsed.data);
   if (tool === "ghost_capabilities") return { capabilities: listGhostCapabilities(parsed.data.ghostId) };
   // Narrow with the corresponding schema; never cast arbitrary model data into provider inputs.
   if (tool === "ghost_github_read_repo") return getRepository(toolSchemas.ghost_github_read_repo.parse(parsed.data));

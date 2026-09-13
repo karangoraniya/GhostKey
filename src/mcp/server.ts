@@ -1,6 +1,8 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { CallToolRequestSchema, ListToolsRequestSchema, type CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { capabilityTools } from "./tools/capabilities";
+import { web3Tools } from "./tools/web3";
+import { customTools } from "./tools/custom";
 import { githubTools } from "./tools/github";
 import { toolSchemas, type ToolName } from "./contracts";
 import { McpToolError } from "./bridge";
@@ -9,7 +11,7 @@ import { logActivity } from "./activity";
 type Executor = (tool: ToolName, args: unknown) => Promise<Record<string, unknown>>;
 export function createMcpServer(execute: Executor) {
   const server = new Server({ name: "ghostkey", version: "0.3.0" }, { capabilities: { tools: {} } });
-  server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: [...capabilityTools, ...githubTools] }));
+  server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: [...capabilityTools, ...githubTools, ...customTools, ...web3Tools] }));
   // Validate arguments ourselves to keep schema diagnostics/raw input out of tool errors.
   server.setRequestHandler(CallToolRequestSchema, async (request): Promise<CallToolResult> => {
     const { name, arguments: args } = request.params;

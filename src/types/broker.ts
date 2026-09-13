@@ -10,7 +10,16 @@ export type AwsCapability = {
   actions: AwsAction[]; createdAt: string; expiresAt: string;
   risk?: never; source?: never; approvalId?: never;
 };
-export type Capability = GitHubCapability | AwsCapability;
+export type CustomAction = `custom.read.${string}`;
+export type CustomCapability = {
+  id: string; ghostId: string; provider: "custom"; resource: { connectionId: string };
+  actions: CustomAction[]; createdAt: string; expiresAt: string;
+  risk?: never; source?: never; approvalId?: never;
+};
+export type Web3Resource = { walletId: string; chainId: 11155111; recipient: string; maxValueWei: string; budgetWei: string };
+export type Web3Action = "web3.balance.read" | "web3.transfer";
+export type Web3Capability = { id: string; ghostId: string; provider: "web3"; resource: Web3Resource; actions: Web3Action[]; createdAt: string; expiresAt: string; risk?: never; source?: never; approvalId?: never };
+export type Capability = GitHubCapability | AwsCapability | CustomCapability | Web3Capability;
 export type GitHubCapability = {
   id: string; ghostId: string; provider: "github"; resource: Repository;
   actions: (GitHubAction | "github.admin.write")[]; createdAt: string; expiresAt: string;

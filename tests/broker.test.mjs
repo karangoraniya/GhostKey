@@ -7,6 +7,8 @@ import { pathToFileURL } from "node:url";
 import ts from "typescript";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { web3Tests } from "./web3-cases.mjs";
+import { customTests } from "./custom-cases.mjs";
 import { awsTests } from "./aws-cases.mjs";
 import { approvalTests } from "./approval-cases.mjs";
 
@@ -43,7 +45,7 @@ export let loads = 0;
 export let encryptions = 0;
 export let afterLoad;
 export function setAfterLoad(fn) { afterLoad = fn; }
-export async function encryptSecret({value, keyName}) { encryptions++; if(!['ghostkey-github', 'ghostkey-aws-access-key', 'ghostkey-aws-secret-key', 'ghostkey-aws-session-token'].includes(keyName)) throw Error(); return Buffer.from(value).toString('base64'); }
+export async function encryptSecret({value, keyName}) { encryptions++; if(!keyName.startsWith('web3-') && !keyName.startsWith('custom-') && !['ghostkey-github', 'ghostkey-aws-access-key', 'ghostkey-aws-secret-key', 'ghostkey-aws-session-token'].includes(keyName)) throw Error(); return Buffer.from(value).toString('base64'); }
 export async function decryptSecret({encrypted}) { loads++; afterLoad?.(); return Buffer.from(encrypted,'base64').toString(); }
 `);
     const load = path => import(pathToFileURL(join(root, path + ".mjs")));
@@ -156,7 +158,7 @@ export async function decryptSecret({encrypted}) { loads++; afterLoad?.(); retur
       try {
         await server.connect(serverTransport); await client.connect(clientTransport);
         const tools = await client.listTools();
-        assert.deepEqual(tools.tools.map(tool => tool.name).sort(), ["ghost_capabilities", "ghost_github_read_repo", "ghost_github_create_issue", "ghost_demo_forbidden_action"].sort());
+        assert.deepEqual(tools.tools.map(tool => tool.name).sort(), ["ghost_capabilities", "ghost_github_read_repo", "ghost_github_create_issue", "ghost_demo_forbidden_action", "ghost_custom_read", "ghost_web3_balance", "ghost_web3_transfer"].sort());
         const { ghost, cap } = make(); const other = make();
         const args = { ghostId: ghost.id, capabilityId: cap.id, ...scope };
         const call = (name, input) => client.callTool({ name, arguments: input });
@@ -221,8 +223,12 @@ export async function decryptSecret({encrypted}) { loads++; afterLoad?.(); retur
       await assert.rejects(client.getRepository({ ...scope, capabilityId: cap.id }), { code: "GITHUB_INVALID_RESPONSE" });
     });
     await awsTests(t, load, { advance: ms => { now += ms; } });
+    await customTests(t, load, { advance: ms => { now += ms; } });
+    await web3Tests(t, load, { advance: ms => { now += ms; } });
   } finally {
     delete globalThis.ghostkeyAws;
+    delete globalThis.ghostkeyCustom;
+    delete globalThis.ghostkeyWeb3;
     Date.now = originalNow; globalThis.fetch = originalFetch;
     delete globalThis.ghostkeyM2;
     await rm(root, { recursive: true, force: true });
