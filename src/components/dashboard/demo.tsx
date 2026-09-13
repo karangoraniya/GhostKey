@@ -15,7 +15,7 @@ export function DemoFlow({ d }: { d: Dashboard }) {
   const succeeded = d.demoRunState === "success" && Boolean(d.demoIssue);
   const issue = d.demoIssue;
   return <div className="demo-stages">
-    <Card id="demo-agent" title="Create Agent" subtitle="An ephemeral identity. Only the authority it needs." icon={<span className="stage-number">01</span>} className={`demo-stage ${d.demoUsable ? "stage-completed" : "stage-current"}`}>
+    <Card id="demo-agent" title="Create Agent" subtitle="An ephemeral identity. Only the authority it needs." icon={<span className="stage-number">01</span>} className={`demo-stage ${d.demoUsable ? "stage-completed" : "stage-current"}`} aside={!d.demoGhost ? <StatusBadge tone="warning" pulse>START HERE</StatusBadge> : undefined}>
       <form className="inline-form" onSubmit={event => { event.preventDefault(); void d.createDemoAgent(); }}>
         <label className="flex-1">Agent name<input value={d.name} onChange={event => d.setName(event.target.value)} required maxLength={100} /></label>
         <button className="button primary" disabled={Boolean(d.busy) || !d.name.trim()}>{d.busy === "demo-setup" ? "Creating agent & authority…" : d.demoGhost && !d.demoCap ? "Retry Agent Setup" : "Create Agent"}<Icon name="arrow" size={16} /></button>
@@ -25,6 +25,8 @@ export function DemoFlow({ d }: { d: Dashboard }) {
       {d.demoGhost && !d.demoCap && d.busy !== "demo-setup" && <p className="feedback feedback-warning" role="status">Identity created, but capability setup did not finish. Retry to complete setup.</p>}
     </Card>
     <Card id="demo-execute" title="Run Agent" subtitle="Create a real GitHub issue without handing the credential to the agent." icon={<span className="stage-number">02</span>} className={`demo-stage ${d.demoUsable && !d.demoBlocked ? "stage-current" : ""} ${!d.demoUsable ? "stage-locked" : ""}`} aside={<span className="section-number">FIRST PROVIDER ADAPTER · GITHUB</span>}>
+      {!d.demoUsable && <div className="lock-banner"><Icon name="shield" size={13} />Locked — create an agent in stage 01 first</div>}
+      <div className={!d.demoUsable ? "stage-dimmed" : ""}>
       <div className="demo-task"><span className="micro">AUTHORIZED TASK</span><code>{DEMO_RESOURCE.owner}/{DEMO_RESOURCE.repo}</code></div>
       <form onSubmit={event => { event.preventDefault(); const data = new FormData(event.currentTarget); void d.provider("issue", { title: String(data.get("title")), body: String(data.get("body")) }, true); }}>
         <label>Issue title<input name="title" defaultValue="GhostKey agent demo" required maxLength={256} /></label>
@@ -41,9 +43,9 @@ export function DemoFlow({ d }: { d: Dashboard }) {
       </div>}
       {issue && succeeded && <div className="demo-result" role="status"><StatusBadge tone="success">AUTHORIZED EXECUTION</StatusBadge><h3>✓ Issue #{issue.number} created</h3><dl className="result-facts"><div><dt>Credential exposed to agent</dt><dd>NO</dd></div><div><dt>Capability</dt><dd><code>github.issue.create</code></dd></div><div><dt>Resource</dt><dd><code>{issue.owner}/{issue.repo}</code></dd></div><div><dt>Authority expires</dt><dd><code>{d.demoCap && countdown(d.demoCap.expiresAt, d.now)}</code></dd></div></dl><a className="text-link" href={`https://github.com/${encodeURIComponent(issue.owner)}/${encodeURIComponent(issue.repo)}/issues/${issue.number}`} target="_blank" rel="noreferrer">View Issue ↗</a></div>}
       {/* Independent of running the agent above: the boundary test only needs active authority, so it never dead-ends behind a GitHub credential. */}
-      <div className={`demo-boundary ${!d.demoUsable ? "stage-locked" : ""}`}><h3>Test the boundary</h3><p>What happens when the same agent asks for authority it does not have?</p><button className="button danger mt-4" disabled={Boolean(d.busy) || !d.demoUsable} onClick={() => void d.provider("blocked", undefined, true)}>{d.busy === "demo-blocked" ? "Checking boundary…" : "Test Unauthorized Action"}</button>
-        {!d.demoUsable && <p className="micro mt-3">Create an agent with active authority in stage 01 to enable this.</p>}
+      <div className="demo-boundary"><h3>Test the boundary</h3><p>What happens when the same agent asks for authority it does not have?</p><button className="button danger mt-4" disabled={Boolean(d.busy) || !d.demoUsable} onClick={() => void d.provider("blocked", undefined, true)}>{d.busy === "demo-blocked" ? "Checking boundary…" : "Test Unauthorized Action"}</button>
         {d.demoBlocked && <div className="demo-result blocked-proof" role="status"><StatusBadge tone="danger">BLOCKED</StatusBadge><h3><code>ACTION_NOT_ALLOWED</code></h3><dl className="result-facts"><div><dt>Requested action</dt><dd><code>github.repo.delete</code></dd></div><div><dt>Provider request sent</dt><dd>NO</dd></div><div><dt>Credential exposed</dt><dd>NO</dd></div><div><dt>Reason</dt><dd>Outside agent capability</dd></div></dl></div>}
+      </div>
       </div>
     </Card>
     <ApprovalPanel d={d} demo />

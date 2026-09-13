@@ -56,8 +56,14 @@ export function ApprovalPanel({ d, demo = false }: { d: Dashboard; demo?: boolea
   const signing = Boolean(a && (d.signingApprovalId === a.approvalId || a.signing));
   const elevatedActive = Boolean(a?.capability && d.capActive(a.capability));
   const ghostActive = Boolean(a && d.activeGhostIds.has(a.ghostId));
-  const locked = demo && !a && !d.demoBlocked;
+  // Re-locks if the underlying demo grant has since expired, even if the boundary test
+  // succeeded earlier in this session — a stale "unlocked" state would let a doomed
+  // request through instead of pointing back at stage 01.
+  const demoReady = Boolean(d.demoBlocked && d.demoUsable);
+  const locked = demo && !a && !demoReady;
   return <Card id={demo ? "demo-approve" : undefined} title={demo ? "High-Risk Authority" : "Advanced Approval"} subtitle="This action exceeds the agent’s current authority." icon={demo ? <span className="stage-number">03</span> : <Icon name="shield" />} className={`approval-panel ${demo ? "demo-approval" : ""} ${locked ? "stage-locked" : ""}`} aside={<StatusBadge tone="warning">HIGH RISK</StatusBadge>}>
+    {locked && <div className="lock-banner"><Icon name="shield" size={13} />Locked — {!d.demoUsable ? "create an agent in stage 01" : "complete the boundary test in stage 02"} first</div>}
+    <div className={locked ? "stage-dimmed" : ""}>
     {!a && !demo && <EmptyState title="No pending approval">Request authority beyond the agent’s current scope.</EmptyState>}
     <dl className="request-facts"><div><dt>Agent</dt><dd>{a ? <Identifier value={a.ghostId} label="approval ghost ID" /> : agent ? <Identifier value={agent.id} label="ghost ID" /> : "No identity selected"}</dd></div><div><dt>Requested action</dt><dd><code>github.admin.write</code></dd></div><div><dt>Resource</dt><dd className="mono break-anywhere">{a?.resource ?? resource}</dd></div></dl>
     {pending && !signing && <div className="approval-state"><div className="flex items-center justify-between gap-2"><StatusBadge tone="warning">HUMAN APPROVAL REQUIRED</StatusBadge><code>{countdown(a.expiresAt, d.now)}</code></div><p>Review this exact scope on your Ledger before approving.</p></div>}
@@ -66,9 +72,9 @@ export function ApprovalPanel({ d, demo = false }: { d: Dashboard; demo?: boolea
     {a && (expired || ["FAILED", "REJECTED", "EXPIRED"].includes(a.status)) && a.status !== "APPROVED" && <div className="approval-state"><StatusBadge tone={expired || a.status === "EXPIRED" ? "muted" : "danger"}>{expired ? "EXPIRED" : a.status}</StatusBadge><p>No authority granted.</p>{a.error && <p className="caption">{explain(a.error)}</p>}</div>}
     {a?.status === "APPROVED" && <p className="caption mt-3">Source: Ledger hardware approval</p>}
     {pending ? <div className="buttons mt-4"><button className="button primary flex-1" disabled={Boolean(d.busy) || signing || !ghostActive} onClick={() => void d.respondApproval(true, a)}><Icon name="ledger" size={16} />Approve with Ledger</button><button className="button secondary" disabled={Boolean(d.busy) || signing || !ghostActive} onClick={() => void d.respondApproval(false, a)}>Reject</button></div>
-      : <button className="button primary mt-5 w-full" disabled={Boolean(d.busy) || !agent || !d.alive(agent.expiresAt) || (demo ? !d.demoBlocked : !d.owner.trim() || !d.repo.trim()) || elevatedActive} onClick={() => void d.requestAuthority(demo)}>{d.busy === "request" ? "Requesting…" : "Request Authority"}<Icon name="arrow" size={16} /></button>}
-    {demo && !d.demoBlocked && <p className="micro mt-3">Complete the boundary test in stage 02 to continue.</p>}
+      : <button className="button primary mt-5 w-full" disabled={Boolean(d.busy) || !agent || !d.alive(agent.expiresAt) || (demo ? !demoReady : !d.owner.trim() || !d.repo.trim()) || elevatedActive} onClick={() => void d.requestAuthority(demo)}>{d.busy === "request" ? "Requesting…" : "Request Authority"}<Icon name="arrow" size={16} /></button>}
     <p className="micro mt-3">5-minute maximum grant. No admin operation or transaction is executed.</p>
     {d.pollError && <p className="feedback feedback-warning" role="alert">Approval status could not refresh. Check the backend before retrying; the last result may be stale.</p>}
+    </div>
   </Card>;
 }

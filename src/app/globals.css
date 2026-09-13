@@ -212,9 +212,12 @@ textarea { resize:vertical; min-height:80px; }
 .demo-stages .panel { width:100%; }.demo-sidebar .panel { grid-area:auto; }
 .stage-number { font:15px monospace; color:#b6b6b6; width:26px; }
 .demo-stage.stage-current { border-color:#515151; }
-.stage-locked { opacity:.5; transition:opacity .15s; }
-.stage-locked:hover { opacity:.7; }
-.demo-boundary.stage-locked { opacity:.45; border-top-style:dashed; }
+/* Locked stages: a full-opacity banner explains why, so a dimmed section reads as
+   "do this first" rather than a rendering glitch. Only the body dims, never the banner. */
+.stage-locked { border-style:dashed; }
+.stage-dimmed { opacity:.55; transition:opacity .15s; }
+.lock-banner { display:flex; align-items:center; gap:8px; font-size:11px; color:#d8bf8c; background:#1c1608; border:1px solid #3d3523; border-radius:6px; padding:9px 12px; margin-bottom:18px; }
+.lock-banner svg { color:#d8bf8c; flex-shrink:0; }
 .demo-stage .panel-heading h2 { font-size:17px; }.demo-stage .panel-heading { padding-block:22px; }
 .demo-agent-result { margin-top:20px; border-top:1px solid #2a2a2a; padding-top:17px; }
 .action-token { border:1px solid #303030; background:#111; border-radius:4px; color:#ccc; padding:5px 8px; font-size:11px; }

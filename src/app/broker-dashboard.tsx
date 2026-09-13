@@ -32,8 +32,10 @@ export default function BrokerDashboard() {
       <div className="demo-layout">
         <div className="demo-stages"><DemoFlow d={d} /><AwsPanel a={aws} d={d} /></div>
         <aside className="demo-sidebar" aria-label="Trust and activity">
-          <details id="trust-details" className="trust-disclosure" open={!trust.ready || showTrust}>
-            <summary onClick={event => { event.preventDefault(); setShowTrust(!showTrust); }}><Icon name="ledger" size={17} />Ledger Trust<StatusBadge tone={trust.tone}>{trust.ready ? "READY" : trust.checking ? "CHECKING" : "NOT READY"}</StatusBadge></summary>
+          {/* Collapsed by default: stages 01-02 need no hardware at all, so a wall of
+              NOT CONNECTED / NOT VERIFIED badges shouldn't greet every first-time visitor. */}
+          <details id="trust-details" className="trust-disclosure" open={showTrust}>
+            <summary onClick={event => { event.preventDefault(); setShowTrust(!showTrust); }}><Icon name="ledger" size={17} />Ledger Trust<span className="micro">only needed for stage 03</span><StatusBadge tone={trust.tone}>{trust.ready ? "READY" : trust.checking ? "CHECKING" : "NOT READY"}</StatusBadge></summary>
             <TrustPanel d={d} compact />
           </details>
         <Card id="activity" title="Activity" subtitle="Observed in this session." icon={<Icon name="activity" />} className="activity-panel" aside={<span className="event-count">{d.events.length}</span>}>
